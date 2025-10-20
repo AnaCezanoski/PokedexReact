@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import "../components/PokemonCard"
-import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+// @ts-ignore
+import { Ionicons } from '@expo/vector-icons';
 import { fetchPokemonList } from '../api/pokeapi';
 import PokemonCard from '../components/PokemonCard';
 import type { PokemonSummary } from '../types';
@@ -9,6 +11,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Pokedex'>;
+
+const SCROLL_THRESHOLD = 200;
 
 export default function PokedexScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -19,6 +23,8 @@ export default function PokedexScreen() {
   const [offset, setOffset] = useState(0);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [searchInput, setSearchInput] = useState('');
+  const flatListRef = useRef<FlatList<PokemonSummary>>(null);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
 
   useEffect(() => {
     loadPokemons();
@@ -76,6 +82,15 @@ export default function PokedexScreen() {
     return <PokemonCard name={item.name} imageUri={imageUri} onPress={() => handlePressPokemon(item)} />;
   };
 
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const scrollOffsetY = event.nativeEvent.contentOffset.y;
+    setShowScrollToTop(scrollOffsetY > SCROLL_THRESHOLD);
+  };
+
+  const scrollToTop = () => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.searchRow}>
@@ -97,12 +112,15 @@ export default function PokedexScreen() {
       ) : (
         <>
           <FlatList
+            ref={flatListRef}
             data={filteredData}
             renderItem={renderItem}
             keyExtractor={(item) => item.name}
             numColumns={2}
             contentContainerStyle={styles.listContentContainer}
             showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             ListEmptyComponent={
                 !loading ? <Text style={styles.noResults}>Nenhum Pokémon encontrado.</Text> : null
             }
@@ -123,6 +141,16 @@ export default function PokedexScreen() {
 
           {error ? <Text style={[styles.error, { paddingBottom: 10 }]}>{error}</Text> : null}
         </>
+      )}
+
+      {showScrollToTop && (
+        <TouchableOpacity
+          style={styles.scrollToTopButton}
+          onPress={scrollToTop}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-up" size={24} color="#fff" />
+        </TouchableOpacity>
       )}
     </SafeAreaView>
   );
@@ -170,5 +198,21 @@ const styles = StyleSheet.create({
      marginTop: 30,
      fontSize: 16,
      color: '#666',
-  }
+  },
+  scrollToTopButton: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    backgroundColor: 'rgba(2, 2, 2, 0.6)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
 });
