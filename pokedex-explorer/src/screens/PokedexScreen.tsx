@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import "../components/PokemonCard"
-import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet, SafeAreaView } from 'react-native';
 import { fetchPokemonList, fetchPokemonByNameOrId } from '../api/pokeapi';
 import PokemonCard from '../components/PokemonCard';
 import type { PokemonSummary } from '../types';
@@ -70,7 +70,7 @@ export default function PokedexScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.searchRow}>
         <TextInput
           value={searchInput}
@@ -93,18 +93,24 @@ export default function PokedexScreen() {
             renderItem={renderItem}
             keyExtractor={(item) => item.name}
             numColumns={2}
-            contentContainerStyle={{ padding: 8 }}
+            contentContainerStyle={{ padding: 8, paddingBottom: 60 }}
             showsVerticalScrollIndicator={false}
           />
           {loading ? (
             <ActivityIndicator style={{ marginVertical: 12 }} />
-          ) : (
-            <Button title="Carregar Mais" onPress={handleLoadMore} disabled={totalCount !== null && pokemons.length >= totalCount} />
-          )}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          ) : totalCount !== null && pokemons.length < totalCount ? (
+            <View style={styles.loadMoreButtonContainer}>
+               <Button
+                  title="Carregar Mais"
+                  onPress={handleLoadMore}
+                  disabled={loading} // Desabilita enquanto carrega
+                />
+            </View>
+          ) : null}
+          {error ? <Text style={[styles.error, { paddingBottom: 10 }]}>{error}</Text> : null}
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -113,4 +119,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f2f2f2' },
   input: { flex: 1, borderWidth: 1, borderColor: '#ddd', padding: 8, borderRadius: 8, backgroundColor: '#fff' },
   error: { color: 'red', textAlign: 'center', margin: 8 },
+  loadMoreButtonContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  }
 });
