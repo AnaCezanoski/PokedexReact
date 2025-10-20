@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import "../components/PokemonCard"
-import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet } from 'react-native';
 import { fetchPokemonList, fetchPokemonByNameOrId } from '../api/pokeapi';
 import PokemonCard from '../components/PokemonCard';
 import type { PokemonSummary } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
-import { Ionicons } from '@expo/vector-icons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Pokedex'>;
 
@@ -70,10 +69,6 @@ export default function PokedexScreen() {
     return <PokemonCard name={item.name} imageUri={imageUri} onPress={() => handlePressPokemon(item)} />;
   };
 
-  const goToFavorites = () => {
-    navigation.navigate('Favorites');
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.searchRow}>
@@ -85,9 +80,6 @@ export default function PokedexScreen() {
           autoCapitalize="none"
         />
         <Button title="Buscar" onPress={handleSearch} />
-        <TouchableOpacity onPress={goToFavorites} style={styles.favoritesIcon}>
-          <Ionicons name="heart" size={28} color="#e3350d" />
-        </TouchableOpacity>
       </View>
 
       {loading && pokemons.length === 0 ? (
@@ -117,20 +109,8 @@ export default function PokedexScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    gap: 8,
-  },
-  searchRow: {
-     flex: 1,
-     flexDirection: 'row',
-     gap: 8,
-     padding: 12,
-  },
+  searchRow: { flexDirection: 'row', gap: 8, padding: 12 },
   container: { flex: 1, backgroundColor: '#f2f2f2' },
   input: { flex: 1, borderWidth: 1, borderColor: '#ddd', padding: 8, borderRadius: 8, backgroundColor: '#fff' },
-  favoritesIcon: { padding: 8 },
   error: { color: 'red', textAlign: 'center', margin: 8 },
 });
