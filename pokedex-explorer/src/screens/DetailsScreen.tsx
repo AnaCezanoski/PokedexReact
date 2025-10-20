@@ -1,13 +1,13 @@
+// src/screens/DetailsScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ActivityIndicator, StyleSheet, ScrollView, Button, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, Image, ActivityIndicator, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { fetchPokemonByNameOrId } from '../api/pokeapi';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { PokemonDetail } from '../types';
 // @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
-
-
+import { useFavorites, FavoritePokemon } from '../context/FavoritesContext';
 
 type Props = {
   route: RouteProp<RootStackParamList, 'Details'>;
@@ -19,8 +19,9 @@ export default function DetailsScreen({ route }: Props) {
   const [pokemon, setPokemon] = useState<PokemonDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [favorited, setFavorited] = useState(false);
+  const { addFavorite, removeFavorite, isFavorited } = useFavorites();
 
+  const favorited = pokemon ? isFavorited(pokemon.id) : false;
 
   useEffect(() => {
     const loadPokemon = async () => {
@@ -28,7 +29,7 @@ export default function DetailsScreen({ route }: Props) {
         setLoading(true);
         setError(null);
         if (param) {
-          const data = await fetchPokemonByNameOrId(param);
+          const data: PokemonDetail = await fetchPokemonByNameOrId(param);
           setPokemon(data);
         }
       } catch (err) {
@@ -40,6 +41,22 @@ export default function DetailsScreen({ route }: Props) {
 
     loadPokemon();
   }, [param]);
+
+  const handleToggleFavorite = () => {
+    if (!pokemon) return;
+
+    const favoriteData: FavoritePokemon = {
+      id: pokemon.id,
+      name: pokemon.name,
+      imageUrl: pokemon.sprites.other?.['official-artwork']?.front_default || pokemon.sprites.front_default
+    };
+
+    if (favorited) {
+      removeFavorite(pokemon.id);
+    } else {
+      addFavorite(favoriteData);
+    }
+  };
 
   if (loading) {
     return <ActivityIndicator style={{ flex: 1 }} size="large" />;
@@ -75,7 +92,7 @@ export default function DetailsScreen({ route }: Props) {
           pressed && { transform: [{ scale: 0.95 }], opacity: 0.8 },
           favorited && styles.favoriteButtonActive,
         ]}
-        onPress={() => setFavorited(!favorited)}
+        onPress={handleToggleFavorite}
       >
         <Ionicons
           name={favorited ? "star" : "star-outline"}
